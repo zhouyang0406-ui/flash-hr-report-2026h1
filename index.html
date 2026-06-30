@@ -346,6 +346,40 @@ html,body{width:100%;height:100%;overflow:hidden;
 .sl-light .iph{border-color:rgba(34,30,31,.08);background:rgba(34,30,31,.02)}
 .iph-icon{font-size:22px;opacity:.3;margin-bottom:5px}
 .iph-text{font-size:10px;text-align:center;opacity:.28;line-height:1.4}
+
+/* ══════════════════════════════════════
+   Flash HR · Hover Micro-interactions
+   180ms ease-out · 专业克制
+══════════════════════════════════════ */
+.skpi-card{transition:transform 180ms ease-out,box-shadow 180ms ease-out;}
+.skpi-card:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 10px 28px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);}
+.sci{transition:transform 180ms ease-out,box-shadow 180ms ease-out;}
+.sci:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.04);}
+.ba{transition:transform 180ms ease-out,box-shadow 180ms ease-out;}
+.ba:hover{transform:translateY(-2px) scale(1.01);box-shadow:0 6px 20px rgba(0,0,0,.09);}
+.icard{transition:transform 180ms ease-out,box-shadow 180ms ease-out;}
+.icard:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.10);}
+.feature-img-wrap{transition:transform 180ms ease-out,box-shadow 180ms ease-out;border-radius:8px;}
+.feature-img-wrap:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 30px rgba(0,0,0,.14);cursor:zoom-in;}
+/* Timeline sibling dimming via CSS parent hover */
+.ms-item{transition:transform 180ms ease-out,opacity 180ms ease-out;border-radius:6px;cursor:pointer;}
+.ms-timeline:hover .ms-item{opacity:.4;}
+.ms-timeline:hover .ms-item:hover{opacity:1!important;transform:translateY(-2px);}
+/* Inline KPI card hover (class injected by JS) */
+.fh-hc{transition:transform 180ms ease-out,box-shadow 180ms ease-out;}
+.fh-hc:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 8px 24px rgba(0,0,0,.10);}
+/* Custom tooltip */
+#fh-tip{
+  position:fixed;z-index:9999;pointer-events:none;
+  background:rgba(34,30,31,.9);color:#fff;border-radius:6px;
+  padding:5px 10px;font-size:11.5px;
+  font-family:'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif;
+  box-shadow:0 4px 14px rgba(0,0,0,.28);line-height:1.5;
+  white-space:nowrap;max-width:220px;
+  opacity:0;transform:translateX(-50%) translateY(4px);
+  transition:opacity 120ms ease-out,transform 120ms ease-out;
+}
+#fh-tip.fh-on{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
@@ -2521,6 +2555,290 @@ html,body{width:100%;height:100%;overflow:hidden;
       });
     }).observe(el,{attributes:true,attributeFilter:['class']});
   }
+})();
+
+// ── Hover Micro-Interactions v2 ───────────────────────────────
+(function(){
+  /* Tooltip */
+  var tip=document.createElement('div');
+  tip.id='fh-tip';
+  document.body.appendChild(tip);
+  var tipTO;
+  function _tp(html,x,y){
+    clearTimeout(tipTO);
+    tip.innerHTML=html;
+    tip.style.left=Math.max(70,Math.min(window.innerWidth-70,x))+'px';
+    tip.style.top=Math.max(8,y-48)+'px';
+    tip.classList.add('fh-on');
+  }
+  function _mv(e){
+    tip.style.left=Math.max(70,Math.min(window.innerWidth-70,e.clientX))+'px';
+    tip.style.top=Math.max(8,e.clientY-48)+'px';
+  }
+  function _th(){tipTO=setTimeout(function(){tip.classList.remove('fh-on');},80);}
+
+  /* SVG element helpers — 180ms ease-out unified */
+  function prep(el){
+    el.style.transition='opacity 180ms ease-out,transform 180ms ease-out,filter 180ms ease-out';
+    el.style.cursor='pointer';
+  }
+  function hilite(el){
+    el.style.opacity='1';
+    el.style.transform='translateY(-2px)';
+    el.style.filter='brightness(1.12) drop-shadow(0 3px 8px rgba(0,0,0,0.18))';
+  }
+  function dim(el){
+    el.style.opacity='0.38';
+    el.style.transform='';
+    el.style.filter='';
+  }
+  function rst(el){
+    el.style.opacity='';
+    el.style.transform='';
+    el.style.filter='';
+  }
+
+  /* Inline KPI cards — inject .fh-hc */
+  document.querySelectorAll('.slide [style]').forEach(function(el){
+    var s=el.getAttribute('style')||'';
+    if((s.includes('background:#FAFAFA')||s.includes('background:#F0FDF4'))
+      &&s.includes('border-radius')&&!s.includes('grid-template')
+      &&el.children.length<=3&&!el.classList.contains('sci'))
+      el.classList.add('fh-hc');
+  });
+
+  /* ── S2 · Semi-donut ─────────────────────────────────────── */
+  (function(){
+    var hrArc=document.getElementById('s2-hr-arc');
+    var oaArc=document.getElementById('s2-oa-arc');
+    var cText=document.getElementById('s2-total');
+    if(!hrArc||!oaArc||!cText) return;
+    var svg=hrArc.closest('svg');
+    var subLbl=svg?svg.querySelector('text[y="87"]'):null;
+    var origHW=hrArc.getAttribute('stroke-width')||'16';
+    var origOW=oaArc.getAttribute('stroke-width')||'16';
+    var hovered=false,savedCT='',savedSL='';
+
+    [
+      {arc:hrArc,sib:oaArc,oW:origHW,cnt:'30',lbl:'HR 线',pct:'61%',
+       glow:'drop-shadow(0 2px 8px rgba(252,238,32,.55))'},
+      {arc:oaArc,sib:hrArc,oW:origOW,cnt:'19',lbl:'OA 线',pct:'39%',
+       glow:'drop-shadow(0 2px 6px rgba(107,114,128,.5))'}
+    ].forEach(function(c){
+      c.arc.style.transition='stroke-width 180ms ease-out,opacity 180ms ease-out,filter 180ms ease-out';
+      c.arc.style.cursor='pointer';
+      c.arc.addEventListener('mouseenter',function(e){
+        if(!hovered){ savedCT=cText.textContent; savedSL=subLbl?subLbl.textContent:''; }
+        hovered=true;
+        c.arc.style.setProperty('stroke-width',String(parseFloat(c.oW)+5));
+        c.arc.style.filter=c.glow;
+        c.arc.style.opacity='1';
+        c.sib.style.opacity='0.28';
+        c.sib.style.setProperty('stroke-width',c.oW);
+        cText.textContent=c.cnt;
+        if(subLbl) subLbl.textContent=c.lbl+' · '+c.pct;
+        _tp('<span style="opacity:.6">'+c.lbl+'</span> <strong>'+c.cnt+' 项</strong> <span style="opacity:.5">('+c.pct+')</span>',e.clientX,e.clientY);
+      });
+      c.arc.addEventListener('mousemove',_mv);
+      c.arc.addEventListener('mouseleave',function(){
+        hovered=false;
+        c.arc.style.setProperty('stroke-width',c.oW);
+        c.arc.style.filter=''; c.arc.style.opacity='';
+        c.sib.style.opacity=''; c.sib.style.setProperty('stroke-width','');
+        cText.textContent=savedCT;
+        if(subLbl) subLbl.textContent=savedSL;
+        _th();
+      });
+    });
+  })();
+
+  /* ── S3L · Line chart (全勤率折线图) ────────────────────── */
+  (function(){
+    var line=document.getElementById('s3L-line');
+    if(!line) return;
+    var svg=line.closest('svg');
+    var dots=Array.from(svg.querySelectorAll('.s3L-dot'));
+    if(!dots.length) return;
+    var origLW=line.getAttribute('stroke-width')||'2.5';
+    var DATA=[
+      {m:'Jan 2026',v:'17%',n:'全勤奖上线首月'},
+      {m:'Feb 2026',v:'29%',n:'↑ 持续上升'},
+      {m:'Mar 2026',v:'28%',n:'保持高位'},
+      {m:'Apr 2026',v:'31%',n:'↑ 再创新高'},
+      {m:'May 2026',v:'33%',n:'H1 最高值'}
+    ];
+    dots.forEach(function(dot,i){
+      var origR=dot.getAttribute('r')||'3.5';
+      dot.style.cursor='pointer';
+      dot.style.transition='opacity 180ms ease-out,filter 180ms ease-out';
+      dot.addEventListener('mouseenter',function(e){
+        dot.setAttribute('r',String(parseFloat(origR)+2.5));
+        dot.style.filter='drop-shadow(0 2px 6px rgba(16,185,129,.6))';
+        dot.style.opacity='1';
+        dots.forEach(function(d){if(d!==dot){d.style.opacity='0.35';d.style.filter='';}});
+        line.setAttribute('stroke-width','3.8');
+        line.style.filter='drop-shadow(0 1px 5px rgba(16,185,129,.35))';
+        var d=DATA[i];
+        _tp('<span style="opacity:.6">'+d.m+'</span> <strong>'+d.v+'</strong> <span style="opacity:.55">'+d.n+'</span>',e.clientX,e.clientY);
+      });
+      dot.addEventListener('mousemove',_mv);
+      dot.addEventListener('mouseleave',function(){
+        dot.setAttribute('r',origR);
+        dot.style.filter=''; dot.style.opacity='';
+        dots.forEach(function(d){d.style.opacity='';d.style.filter='';});
+        line.setAttribute('stroke-width',origLW);
+        line.style.filter='';
+        _th();
+      });
+    });
+  })();
+
+  /* ── S3R · Bar + Line combo (夜班津贴) ──────────────────── */
+  (function(){
+    var ids=['s3R-bar1','s3R-bar2','s3R-bar3','s3R-bar4','s3R-bar5'];
+    var bars=ids.map(function(id){return document.getElementById(id);}).filter(Boolean);
+    if(!bars.length) return;
+    var svg=bars[0].closest('svg');
+    var dots=Array.from(svg.querySelectorAll('circle'));
+    var pl=svg.querySelector('polyline');
+    var origLW=pl?pl.getAttribute('stroke-width')||'2':'2';
+    var origRs=dots.map(function(d){return d.getAttribute('r')||'3.5';});
+    var DATA=[
+      {p:'4月下半月',cnt:'565 人次',hrs:'20,353 h'},
+      {p:'5月上半月',cnt:'437 人次',hrs:'16,302 h'},
+      {p:'5月下半月',cnt:'476 人次',hrs:'17,544 h'},
+      {p:'6月上半月',cnt:'464 人次',hrs:'16,995 h'},
+      {p:'6月下半月',cnt:'337 人次',hrs:'8,970 h'}
+    ];
+    bars.forEach(function(bar,i){
+      prep(bar);
+      bar.addEventListener('mouseenter',function(e){
+        bars.forEach(function(b,j){j===i?hilite(b):dim(b);});
+        dots.forEach(function(d,j){
+          d.style.transition='opacity 180ms ease-out,filter 180ms ease-out';
+          if(j===i){
+            d.setAttribute('r',String(parseFloat(origRs[j])+2));
+            d.style.filter='drop-shadow(0 2px 5px rgba(34,30,31,.3))';
+            d.style.opacity='1';
+          } else {
+            d.setAttribute('r',origRs[j]);
+            d.style.opacity='0.32'; d.style.filter='';
+          }
+        });
+        if(pl) pl.setAttribute('stroke-width','3.2');
+        var d=DATA[i];
+        _tp('<span style="opacity:.6">'+d.p+'</span> <strong>'+d.cnt+'</strong> <span style="opacity:.5">/ '+d.hrs+'</span>',e.clientX,e.clientY);
+      });
+      bar.addEventListener('mousemove',_mv);
+      bar.addEventListener('mouseleave',function(){
+        bars.forEach(rst);
+        dots.forEach(function(d,j){
+          d.setAttribute('r',origRs[j]);
+          d.style.opacity=''; d.style.filter='';
+        });
+        if(pl) pl.setAttribute('stroke-width',origLW);
+        _th();
+      });
+    });
+  })();
+
+  /* ── S6 · Horizontal bars (证明下载) ────────────────────── */
+  (function(){
+    var defs=[
+      {id:'s6-bar1',lbl:'就业证明',val:'321',pct:'50.7%'},
+      {id:'s6-bar2',lbl:'在职证明',val:'173',pct:'27.3%'},
+      {id:'s6-bar3',lbl:'工资证明',val:'139',pct:'22.0%'}
+    ];
+    var bars=defs.map(function(d){return document.getElementById(d.id);}).filter(Boolean);
+    if(!bars.length) return;
+    bars.forEach(function(bar,i){
+      prep(bar);
+      bar.addEventListener('mouseenter',function(e){
+        bars.forEach(function(b,j){j===i?hilite(b):dim(b);});
+        var d=defs[i];
+        _tp('<span style="opacity:.6">'+d.lbl+'</span> <strong>'+d.val+'</strong> <span style="opacity:.5">('+d.pct+')</span>',e.clientX,e.clientY);
+      });
+      bar.addEventListener('mousemove',_mv);
+      bar.addEventListener('mouseleave',function(){bars.forEach(rst);_th();});
+    });
+  })();
+
+  /* ── S9B1 · Vertical bars (批量操作次数) ────────────────── */
+  (function(){
+    var defs=[
+      {id:'s9b1r1',vid:'s9b1v1',m:'2月',v:'64',n:'功能上线初期'},
+      {id:'s9b1r2',vid:'s9b1v2',m:'3月',v:'142',n:'↑ 大幅增长'},
+      {id:'s9b1r3',vid:'s9b1v3',m:'4月',v:'120',n:'稳步推进'},
+      {id:'s9b1r4',vid:'s9b1v4',m:'5月',v:'175',n:'月度峰值'},
+      {id:'s9b1r5',vid:'s9b1v5',m:'6月',v:'170',n:'高位保持'}
+    ];
+    var bars=defs.map(function(d){return document.getElementById(d.id);}).filter(Boolean);
+    var vals=defs.map(function(d){return document.getElementById(d.vid);});
+    if(!bars.length) return;
+    bars.forEach(function(bar,i){
+      prep(bar);
+      bar.addEventListener('mouseenter',function(e){
+        bars.forEach(function(b,j){j===i?hilite(b):dim(b);});
+        vals.forEach(function(v,j){
+          if(!v) return;
+          v.style.transition='opacity 180ms ease-out';
+          v.style.opacity=j===i?'1':'0.32';
+        });
+        var d=defs[i];
+        _tp('<span style="opacity:.6">'+d.m+'</span> <strong>'+d.v+' 次</strong> <span style="opacity:.55">'+d.n+'</span>',e.clientX,e.clientY);
+      });
+      bar.addEventListener('mousemove',_mv);
+      bar.addEventListener('mouseleave',function(){
+        bars.forEach(rst);
+        vals.forEach(function(v){if(v) v.style.opacity='';});
+        _th();
+      });
+    });
+  })();
+
+  /* ── S9B2 · Vertical bars (批量修改次数) ────────────────── */
+  (function(){
+    var defs=[
+      {id:'s9b2r1',vid:'s9b2v1',m:'3月',v:'21',n:'历史班次功能上线'},
+      {id:'s9b2r2',vid:'s9b2v2',m:'4月',v:'57',n:'↑ 增长 171%'},
+      {id:'s9b2r3',vid:'s9b2v3',m:'5月',v:'86',n:'月度峰值'},
+      {id:'s9b2r4',vid:'s9b2v4',m:'6月',v:'49',n:'持续使用'}
+    ];
+    var bars=defs.map(function(d){return document.getElementById(d.id);}).filter(Boolean);
+    var vals=defs.map(function(d){return document.getElementById(d.vid);});
+    if(!bars.length) return;
+    bars.forEach(function(bar,i){
+      prep(bar);
+      bar.addEventListener('mouseenter',function(e){
+        bars.forEach(function(b,j){j===i?hilite(b):dim(b);});
+        vals.forEach(function(v,j){
+          if(!v) return;
+          v.style.transition='opacity 180ms ease-out';
+          v.style.opacity=j===i?'1':'0.32';
+        });
+        var d=defs[i];
+        _tp('<span style="opacity:.6">'+d.m+'</span> <strong>'+d.v+' 次</strong> <span style="opacity:.55">'+d.n+'</span>',e.clientX,e.clientY);
+      });
+      bar.addEventListener('mousemove',_mv);
+      bar.addEventListener('mouseleave',function(){
+        bars.forEach(rst);
+        vals.forEach(function(v){if(v) v.style.opacity='';});
+        _th();
+      });
+    });
+  })();
+
+  /* ── ms-item timeline tooltip ──────────────────────────── */
+  document.querySelectorAll('.ms-item').forEach(function(item){
+    var itEl=item.querySelector('.ms-items');
+    if(!itEl) return;
+    var moEl=item.querySelector('.ms-month');
+    item.addEventListener('mouseenter',function(e){
+      _tp((moEl?'<span style="opacity:.6">'+moEl.textContent.trim()+'</span> ':'')+itEl.textContent.trim().replace(/\s+/g,' '),e.clientX,e.clientY);
+    });
+    item.addEventListener('mousemove',_mv);
+    item.addEventListener('mouseleave',_th);
+  });
 })();
 </script>
 </body>
